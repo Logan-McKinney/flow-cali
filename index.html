@@ -851,34 +851,38 @@
     Post to that URL with the email as a form field value.
   ============================================================ -->
   <script>
-    function handleSubmit(e, id) {
+    async function handleSubmit(e, id) {
       e.preventDefault();
-
+  
       const form = e.target;
-      const email = form.querySelector('input[type="email"]').value;
+      const emailInput = form.querySelector('input[type="email"]');
+      const email = emailInput.value;
 
-      fetch('https://api.beehiiv.com/v2/publications/71fc3142-5d61-4f05-9b0a-178719e8f15f/subscriptions', {
-         method: 'POST',
-         headers: {
-           'Content-Type': 'application/json',
-           'Authorization': 'Bearer pDCWQxPRAVxY1Ct9wOl11qWCYRL7LvusuRwUrVwjglv4ot8HAE4bwKCuDOnJy0D6'
-         },
-         body: JSON.stringify({ email: email, reactivate_existing: false })
-       })
-      
-      // ─────────────────────────────────────────────────────────
+      try {
+        const response = await fetch('/api/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
 
-      // Hide the submitted form
-      form.style.display = 'none';
+        const data = await response.json();
 
-      // Hide the "No spam" note if it's the next sibling after success msg
-      const note = form.nextElementSibling?.nextElementSibling;
-      if (note && note.classList.contains('form-note')) {
-        note.style.display = 'none';
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to subscribe');
+        }
+
+        form.style.display = 'none';
+
+        const note = form.nextElementSibling?.nextElementSibling;
+        if (note && note.classList.contains('form-note')) {
+          note.style.display = 'none';
+        }
+
+        document.getElementById('success-' + id).style.display = 'flex';
+      } catch (err) {
+        console.error(err);
+        alert('Subscription failed. Please try again.');
       }
-
-      // Show the success confirmation using the correct id suffix
-      document.getElementById('success-' + id).style.display = 'flex';
     }
   </script>
 
