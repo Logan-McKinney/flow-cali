@@ -2,35 +2,877 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>FlowCali</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlowCali — AI-Powered Calisthenics Form Analysis</title>
+
+  <!-- ============================================================
+    GOOGLE FONTS
+    Barlow Condensed = headlines, logo, feature titles (tall + tight)
+    Barlow = body text, descriptions, form labels (clean + readable)
+  ============================================================ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+
   <style>
-    body {
+
+    /* ============================================================
+      CSS RESET
+      Removes all default browser spacing and sizing behavior.
+      box-sizing: border-box means padding is included in width
+      calculations rather than added on top.
+    ============================================================ */
+    *, *::before, *::after {
+      box-sizing: border-box;
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: white;
+      padding: 0;
+    }
+
+    /* ============================================================
+      DESIGN TOKENS (CSS VARIABLES)
+      All brand colors defined in one place. Change a value here
+      and it updates everywhere on the page instantly.
+      --navy       = main dark background
+      --navy-mid   = slightly lighter navy for hover states
+      --lime       = brand accent green (from logo)
+      --lime-bright = brighter lime for hover states on buttons
+      --lime-dim   = darker lime for subtle accents
+      --white      = off-white text (pure white feels harsh on navy)
+      --muted      = semi-transparent white for secondary text
+      --faint      = very transparent white for input backgrounds
+    ============================================================ */
+    :root {
+      --navy: #0f1f3d;
+      --navy-mid: #1a2f54;
+      --navy-light: #243a66;
+      --lime: #7ab82e;
+      --lime-bright: #8fd433;
+      --lime-dim: #5c8c1e;
+      --white: #f5f7f2;
+      --muted: rgba(245,247,242,0.5);
+      --faint: rgba(245,247,242,0.08);
+    }
+
+    /* ============================================================
+      BASE PAGE STYLES
+      Sets the font, background color, text color, and prevents
+      horizontal scrolling which can happen with animated elements.
+    ============================================================ */
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Barlow', sans-serif;
+      background: var(--navy);
+      color: var(--white);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ============================================================
+      GRID TEXTURE OVERLAY (body::before)
+      A subtle grid pattern layered over the background using
+      a CSS-only technique. Two linear gradients crossed at 90
+      degrees create faint grid lines. pointer-events: none
+      means it doesn't interfere with clicking anything.
+      position: fixed keeps it covering the viewport even when
+      scrolling. z-index: 0 keeps it behind all content.
+    ============================================================ */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(122,184,46,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(122,184,46,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ============================================================
+      LIME GLOW BLOB (body::after)
+      A large radial gradient in the top-right corner that creates
+      a subtle atmospheric glow effect. Gives the page depth
+      without adding actual images or heavy graphics.
+    ============================================================ */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -20%;
+      right: -10%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(122,184,46,0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ============================================================
+      CONTAINER
+      Centers content and limits max width to 900px.
+      position: relative and z-index: 1 ensure content
+      sits above the body::before grid texture overlay.
+    ============================================================ */
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    /* ============================================================
+      NAVIGATION BAR
+      Simple top bar with logo on the left and a status tag
+      on the right. z-index: 10 keeps it above everything else.
+    ============================================================ */
+    nav {
+      position: relative;
+      z-index: 10;
+      padding: 2rem 0 0;
+    }
+
+    nav .container {
       display: flex;
-      justify-content: center;
       align-items: center;
-      height: 100vh;
+      justify-content: space-between;
+    }
+
+    .nav-image {
+      height: 40px;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    /* Logo wordmark text styling */
+    .logo-text {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .nav-image {
+      height: 40px;       /* controls size */
+      width: auto;
+      opacity: 0.9;
+    }
+
+    /* The "Cali" part of FlowCali in lime green */
+    .logo-text span { color: var(--lime); }
+
+    /* "Early Access" pill in top right corner */
+    .nav-tag {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--lime);
+      border: 1px solid var(--lime-dim);
+      padding: 0.35rem 0.8rem;
+      border-radius: 2px;
+    }
+
+    /* ============================================================
+      HERO SECTION
+      The main above-the-fold area. Contains the silhouette image,
+      eyebrow label, headline, subtitle, and email form.
+    ============================================================ */
+    .hero {
+      padding: 5rem 0 5rem;
+      position: relative;
+    }
+
+    /* ============================================================
+      HERO SILHOUETTE IMAGE (top center)
+      Placed above the headline text as a visual anchor.
+
+      HOW THE WHITE BACKGROUND IS HIDDEN:
+      mix-blend-mode: multiply makes white pixels transparent
+      on dark backgrounds. White = #ffffff and multiply math
+      with any dark color produces that dark color, making
+      white pixels effectively disappear into the background.
+
+      IMPORTANT: This only works cleanly on solid-color backgrounds.
+
+      TO USE YOUR ACTUAL IMAGE:
+        1. Save your logo PNG in the same folder as this HTML file
+        2. Change src="flowcali-logo.png" to your actual filename
+           e.g. src="flowcali-figure.png"
+        3. If you export a version with a TRANSPARENT background
+           from ChatGPT or Photoshop, remove mix-blend-mode from
+           the .hero-silhouette CSS rule — it won't be needed
+    ============================================================ */
+    .hero-silhouette {
+      display: block;
+      margin: 0 auto 3rem auto;
+      max-width: 520px;
+      width: 90%;
+      mix-blend-mode: multiply;
+      opacity: 0.9;
+    }
+
+    /* Small label above the headline */
+    .hero-eyebrow {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--lime);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    /* Short horizontal lime line before the eyebrow text */
+    .hero-eyebrow::before {
+      content: '';
+      display: block;
+      width: 32px;
+      height: 1px;
+      background: var(--lime);
+    }
+
+    /* ============================================================
+      HERO HEADLINE
+      Large stacked type. Three lines each on its own div so
+      they animate in separately with staggered delays.
+      clamp() makes font size responsive — scales between
+      3.5rem on mobile and 6.5rem on wide screens automatically.
+    ============================================================ */
+    .hero-headline {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: clamp(3.5rem, 8vw, 6.5rem);
+      font-weight: 800;
+      line-height: 0.95;
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      margin-bottom: 2rem;
+    }
+
+    /* "Every" in lime green */
+    .hero-headline .accent { color: var(--lime); }
+
+    /* "Rep." as outline text — transparent fill, white stroke */
+    .hero-headline .outline {
+      -webkit-text-stroke: 1.5px var(--white);
+      color: transparent;
+    }
+
+    /* Supporting paragraph below the headline */
+    .hero-sub {
+      font-size: 1.05rem;
+      font-weight: 300;
+      color: var(--muted);
+      max-width: 480px;
+      line-height: 1.7;
+      margin-bottom: 3.5rem;
+    }
+
+    /* ============================================================
+      WAITLIST EMAIL FORM
+      Side-by-side input + button. The input and button share
+      one seamless border by removing the border between them —
+      border-right: none on input, no border-left on button.
+    ============================================================ */
+    .waitlist-form {
+      display: flex;
+      gap: 0;
+      max-width: 480px;
+    }
+
+    .waitlist-form input[type="email"] {
+      flex: 1;
+      background: var(--faint);
+      border: 1px solid rgba(122,184,46,0.3);
+      border-right: none;
+      color: var(--white);
+      font-family: 'Barlow', sans-serif;
+      font-size: 0.95rem;
+      padding: 0.9rem 1.25rem;
+      outline: none;
+      border-radius: 2px 0 0 2px;
+      transition: border-color 0.2s;
+    }
+
+    .waitlist-form input[type="email"]::placeholder { color: var(--muted); }
+
+    /* Lime border highlight when user clicks into the field */
+    .waitlist-form input[type="email"]:focus { border-color: var(--lime); }
+
+    .waitlist-form button {
+      background: var(--lime);
+      color: var(--navy);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.9rem 1.75rem;
+      border: none;
+      border-radius: 0 2px 2px 0;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    .waitlist-form button:hover { background: var(--lime-bright); }
+
+    /* Small disclaimer text beneath the form */
+    .form-note {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.75rem;
+      letter-spacing: 0.03em;
+    }
+
+    /* ============================================================
+      SUCCESS MESSAGE
+      Hidden by default (display: none). When the form is
+      submitted, JavaScript hides the form and shows this instead.
+      The circle checkmark is pure CSS — no icon library needed.
+    ============================================================ */
+    .success-msg {
+      display: none;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.95rem;
+      color: var(--lime);
+      padding: 0.9rem 0;
+    }
+
+    .success-msg .check {
+      width: 20px;
+      height: 20px;
+      border: 1.5px solid var(--lime);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+
+    /* ============================================================
+      SECTION DIVIDER
+      Simple horizontal rule. We override the default <hr>
+      element completely because it renders differently across
+      browsers. 8% opacity white gives a very subtle line.
+    ============================================================ */
+    .section-divider {
+      border: none;
+      border-top: 1px solid rgba(245,247,242,0.08);
+      margin: 5rem 0;
+    }
+
+    /* ============================================================
+      FEATURES SECTION
+      Label + 4-item grid. The grid uses 1px gaps with a semi-
+      transparent background showing through as divider lines —
+      this creates borders between cards without explicit borders.
+    ============================================================ */
+    .features-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 3rem;
+    }
+
+    /* Grid container — gap color = dividing lines between cards */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1px;
+      background: rgba(245,247,242,0.06);
+      border: 1px solid rgba(245,247,242,0.06);
+    }
+
+    /* Individual feature card */
+    .feature-item {
+      background: var(--navy);
+      padding: 2rem 1.75rem;
+      transition: background 0.2s;
+    }
+
+    .feature-item:hover { background: var(--navy-mid); }
+
+    /* "01", "02" numbering above each feature title */
+    .feature-number {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      color: var(--lime-dim);
+      margin-bottom: 1.25rem;
+    }
+
+    .feature-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-bottom: 0.6rem;
+      line-height: 1.1;
+    }
+
+    .feature-desc {
+      font-size: 0.82rem;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    /* ============================================================
+      SCROLLING TICKER
+      Continuous horizontal scroll of calisthenics skill names.
+
+      HOW THE SEAMLESS LOOP WORKS:
+      The ticker-track contains every item TWICE (24 total = 12
+      unique repeated). The animation moves the track exactly -50%
+      which is exactly one full set of 12 items. When it loops back
+      to 0% it looks seamless because item 13 is identical to item 1.
+
+      The ::before and ::after on the container create fade-out
+      gradients on both edges so items don't hard-cut at the sides.
+    ============================================================ */
+    .ticker-section {
+      margin: 5rem 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Left fade-out gradient edge */
+    .ticker-section::before,
+    .ticker-section::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 80px;
+      z-index: 2;
+    }
+
+    .ticker-section::before {
+      left: 0;
+      background: linear-gradient(90deg, var(--navy), transparent);
+    }
+
+    /* Right fade-out gradient edge */
+    .ticker-section::after {
+      right: 0;
+      background: linear-gradient(-90deg, var(--navy), transparent);
+    }
+
+    /* The moving strip — width: max-content prevents line wrapping */
+    .ticker-track {
+      display: flex;
+      gap: 0;
+      animation: ticker 22s linear infinite;
+      width: max-content;
+    }
+
+    .ticker-item {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 0.6rem 2rem;
+      white-space: nowrap;
+      color: var(--muted);
+      border-right: 1px solid rgba(245,247,242,0.08);
+    }
+
+    /* Lime-highlighted items alternate with muted ones */
+    .ticker-item.highlight { color: var(--lime); }
+
+    /* Moves track from 0 to -50% then loops — seamless */
+    @keyframes ticker {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    /* ============================================================
+      BOTTOM CALL TO ACTION
+      Second email capture for users who scroll past the hero.
+      Centered layout reusing the same form component.
+      margin: 0 auto on the form centers it within the section.
+    ============================================================ */
+    .bottom-cta {
+      padding: 5rem 0 6rem;
       text-align: center;
     }
-    h1 {
-      font-size: 3rem;
-      margin-bottom: 10px;
+
+    .bottom-cta h2 {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      margin-bottom: 1rem;
+      line-height: 1.1;
     }
-    p {
-      font-size: 1.2rem;
-      color: #94a3b8;
+
+    .bottom-cta h2 span { color: var(--lime); }
+
+    .bottom-cta p {
+      font-size: 0.9rem;
+      font-weight: 300;
+      color: var(--muted);
+      margin-bottom: 2.5rem;
     }
+
+    .bottom-cta .waitlist-form { margin: 0 auto; }
+
+    /* ============================================================
+      FOOTER
+      Minimal bar with logo and copyright. flex + space-between
+      pushes logo left and copyright right. flex-wrap allows
+      stacking on very small screens.
+    ============================================================ */
+    footer {
+      border-top: 1px solid rgba(245,247,242,0.06);
+      padding: 2rem 0;
+    }
+
+    footer .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    footer .logo-text { font-size: 1.1rem; }
+
+    footer p {
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    /* ============================================================
+      ENTRANCE ANIMATIONS
+      Elements fade up from slightly below on page load.
+      .fade-up starts them invisible (opacity: 0).
+      Each delay-N class staggers when each element begins so
+      they cascade in rather than all appearing simultaneously.
+    ============================================================ */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-up {
+      opacity: 0;
+      animation: fadeUp 0.7s ease forwards;
+    }
+
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.25s; }
+    .delay-3 { animation-delay: 0.4s; }
+    .delay-4 { animation-delay: 0.55s; }
+    .delay-5 { animation-delay: 0.7s; }
+
+    /* ============================================================
+      VERTICAL ACCENT BAR
+      Thin 3px lime line on the right edge of the hero section.
+      Pure decorative detail reinforcing the brand color and
+      adding visual interest to the open right side of the layout.
+    ============================================================ */
+    .accent-bar {
+      width: 3px;
+      height: 80px;
+      background: var(--lime);
+      position: absolute;
+      right: 0;
+      top: 6rem;
+      opacity: 0.4;
+    }
+
+    /* ============================================================
+      MOBILE RESPONSIVE STYLES
+      Below 600px (most phones), the form stacks vertically
+      instead of side by side, hero padding reduces, and the
+      silhouette image shrinks to fit smaller screens.
+    ============================================================ */
+    @media (max-width: 600px) {
+      .waitlist-form { flex-direction: column; }
+
+      /* Restore right border and change radius for stacked layout */
+      .waitlist-form input[type="email"] {
+        border-right: 1px solid rgba(122,184,46,0.3);
+        border-bottom: none;
+        border-radius: 2px 2px 0 0;
+      }
+
+      .waitlist-form button { border-radius: 0 0 2px 2px; }
+
+      .hero { padding: 3rem 0 3rem; }
+
+      .hero-silhouette { max-width: 320px; }
+    }
+
   </style>
 </head>
 <body>
-  <div>
-    <h1>FlowCali</h1>
-    <p>AI-Powered Calisthenics Training</p>
-    <p>Coming Soon</p>
+
+  <!-- ============================================================
+    NAVIGATION
+    Logo wordmark left, "Early Access" status tag right.
+    The <span> inside .logo-text makes "Cali" lime colored.
+  ============================================================ -->
+  <nav>
+    <div class="container">
+      <div class="logo-text">Flow<span>Cali</span></div>
+      <img src="/planche.png" alt="Planche" class="nav-image" />
+      <div class="nav-tag">Early Access</div>
+    </div>
+  </nav>
+
+
+  <!-- ============================================================
+    HERO SECTION
+    Main above-the-fold content. Structured top to bottom as:
+    1. Planche silhouette image (top center)
+    2. Eyebrow label (small uppercase text)
+    3. Three-line stacked headline
+    4. Supporting paragraph
+    5. Email waitlist form
+    6. Success message (hidden until form submitted)
+    7. No-spam disclaimer note
+  ============================================================ -->
+  <section class="hero">
+    <div class="container" style="position:relative;">
+
+      <!-- Thin vertical lime bar on the right edge of the hero -->
+      <div class="accent-bar"></div>
+
+      
+
+      <!-- Small uppercase label above the main headline -->
+      <p class="hero-eyebrow fade-up delay-2">AI-Powered Calisthenics Form Analysis</p>
+
+      <!-- Main headline — three lines animate in with staggered delays -->
+      <h1 class="hero-headline">
+        <div class="fade-up delay-2">Perfect</div>
+        <div class="fade-up delay-3"><span class="accent">Every</span></div>
+        <div class="fade-up delay-4"><span class="outline">Rep.</span></div>
+      </h1>
+
+      <!-- One-sentence description of what FlowCali does -->
+      <p class="hero-sub fade-up delay-4">
+        Film your movement. FlowCali analyzes your form in real time — detecting exactly what's wrong, why it matters, and how to fix it.
+      </p>
+
+      <!-- Form wrapper — also wraps the success message and note -->
+      <div class="fade-up delay-5">
+
+        <!-- Top waitlist form — id suffix "top" targets the correct
+             success message in handleSubmit() below -->
+        <form class="waitlist-form" id="waitlist-top" onsubmit="handleSubmit(event, 'top')">
+          <input type="email" placeholder="Enter your email" required autocomplete="email" />
+          <button type="submit">Join Waitlist</button>
+        </form>
+
+        <!-- Shown after form submission, hidden by default -->
+        <div class="success-msg" id="success-top">
+          <div class="check">✓</div>
+          <span>You're on the list. We'll be in touch.</span>
+        </div>
+
+        <!-- Fine print below the form -->
+        <p class="form-note">No spam. Early access notification only.</p>
+
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ============================================================
+    SCROLLING MOVEMENT TICKER
+    Continuous scroll of calisthenics skill names.
+    Items are duplicated so the loop is seamless — by the time
+    item 13 appears it's identical to item 1, making the restart
+    invisible to the eye. highlight class = lime, rest = muted.
+  ============================================================ -->
+  <div class="ticker-section">
+    <div class="ticker-track">
+      <!-- First set of 12 unique items -->
+      <span class="ticker-item highlight">Planche</span>
+      <span class="ticker-item">Front Lever</span>
+      <span class="ticker-item highlight">Handstand Pushup</span>
+      <span class="ticker-item">Pike Pushup</span>
+      <span class="ticker-item highlight">L-Sit</span>
+      <span class="ticker-item">Back Lever</span>
+      <span class="ticker-item highlight">Ring Dip</span>
+      <span class="ticker-item">Muscle Up</span>
+      <span class="ticker-item highlight">Human Flag</span>
+      <span class="ticker-item">Handstand</span>
+      <span class="ticker-item highlight">Dragon Flag</span>
+      <span class="ticker-item">Hollow Body</span>
+      <!-- Duplicate set — required for the seamless loop trick -->
+      <span class="ticker-item highlight">Planche</span>
+      <span class="ticker-item">Front Lever</span>
+      <span class="ticker-item highlight">Handstand Pushup</span>
+      <span class="ticker-item">Pike Pushup</span>
+      <span class="ticker-item highlight">L-Sit</span>
+      <span class="ticker-item">Back Lever</span>
+      <span class="ticker-item highlight">Ring Dip</span>
+      <span class="ticker-item">Muscle Up</span>
+      <span class="ticker-item highlight">Human Flag</span>
+      <span class="ticker-item">Handstand</span>
+      <span class="ticker-item highlight">Dragon Flag</span>
+      <span class="ticker-item">Hollow Body</span>
+    </div>
   </div>
+
+
+  <!-- ============================================================
+    FEATURES SECTION
+    Four cards explaining what FlowCali does.
+    auto-fit + minmax makes the grid automatically reflow —
+    4 columns on desktop, 2x2 on tablet, 1 column on mobile.
+  ============================================================ -->
+  <div class="container">
+    <hr class="section-divider">
+
+    <p class="features-label">What FlowCali does</p>
+
+    <div class="features-grid">
+
+      <div class="feature-item">
+        <p class="feature-number">01</p>
+        <h3 class="feature-title">Real-Time Form Detection</h3>
+        <p class="feature-desc">AI tracks every joint angle and body position frame by frame, catching errors the human eye misses mid-rep.</p>
+      </div>
+
+      <div class="feature-item">
+        <p class="feature-number">02</p>
+        <h3 class="feature-title">Per-Rep Breakdown</h3>
+        <p class="feature-desc">Know exactly which rep broke down and why. Fatigue patterns, consistency scores, and specific correction cues for each set.</p>
+      </div>
+
+      <div class="feature-item">
+        <p class="feature-number">03</p>
+        <h3 class="feature-title">Skill Progressions</h3>
+        <p class="feature-desc">Personalized exercise recommendations targeting your specific weaknesses. The fastest path to your next skill.</p>
+      </div>
+
+      <div class="feature-item">
+        <p class="feature-number">04</p>
+        <h3 class="feature-title">Progress Tracking</h3>
+        <p class="feature-desc">Watch your form scores improve over weeks. Quantify what was previously only felt — precision you can measure.</p>
+      </div>
+
+    </div>
+
+    <hr class="section-divider">
+  </div>
+
+
+  <!-- ============================================================
+    BOTTOM CALL TO ACTION
+    Second email capture for users who scroll past the hero
+    without signing up. Same form structure, different id suffix
+    so JavaScript targets the correct success message.
+  ============================================================ -->
+  <section class="bottom-cta">
+    <div class="container">
+      <h2>Train with <span>precision.</span><br>Join the waitlist.</h2>
+      <p>Be first to access FlowCali when we launch.</p>
+
+      <form class="waitlist-form" id="waitlist-bottom" onsubmit="handleSubmit(event, 'bottom')">
+        <input type="email" placeholder="Enter your email" required autocomplete="email" />
+        <button type="submit">Get Early Access</button>
+      </form>
+
+      <!-- Shown after bottom form submission, hidden by default -->
+      <div class="success-msg" id="success-bottom">
+        <div class="check">✓</div>
+        <span>You're on the list. We'll be in touch.</span>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ============================================================
+    FOOTER
+    Logo left, copyright right. flex-wrap allows stacking
+    on very narrow screens.
+  ============================================================ -->
+  <footer>
+    <div class="container">
+      <div class="logo-text">Flow<span>Cali</span></div>
+      <p>© 2025 FlowCali. All rights reserved.</p>
+    </div>
+  </footer>
+
+
+  <!-- ============================================================
+    JAVASCRIPT — FORM SUBMISSION HANDLER
+
+    handleSubmit(event, id) is called by both forms via onsubmit.
+    - event = the browser form submit event
+    - id    = 'top' or 'bottom', used to find the right success msg
+
+    WHAT IT DOES:
+    1. Prevents the default browser page reload on form submit
+    2. Grabs the email value from the input field
+    3. Sends the email to your chosen service (see below)
+    4. Hides the form and disclaimer note
+    5. Shows the green success confirmation message
+
+    ── CONNECTING BEEHIIV (recommended) ────────────────────────
+    1. Create a free account at beehiiv.com
+    2. Create a publication called "FlowCali"
+    3. Go to Settings > API Keys and generate a key
+    4. Go to your publication and copy the Publication ID
+    5. Replace the console.log line below with:
+
+       fetch('https://api.beehiiv.com/v2/publications/YOUR_PUB_ID/subscriptions', {
+         method: 'POST',
+         headers: {
+           'Content-Type': 'application/json',
+           'Authorization': 'Bearer YOUR_API_KEY'
+         },
+         body: JSON.stringify({ email: email, reactivate_existing: false })
+       })
+
+    ── CONNECTING MAILCHIMP ─────────────────────────────────────
+    Mailchimp gives you a form action URL from their dashboard
+    under Audience > Signup Forms > Embedded Forms.
+    Post to that URL with the email as a form field value.
+  ============================================================ -->
+  <script>
+    function handleSubmit(e, id) {
+      e.preventDefault();
+
+      const form = e.target;
+      const email = form.querySelector('input[type="email"]').value;
+
+      // ── REPLACE THIS LINE with your real email service call ──
+      console.log('Waitlist signup:', email);
+      // ─────────────────────────────────────────────────────────
+
+      // Hide the submitted form
+      form.style.display = 'none';
+
+      // Hide the "No spam" note if it's the next sibling after success msg
+      const note = form.nextElementSibling?.nextElementSibling;
+      if (note && note.classList.contains('form-note')) {
+        note.style.display = 'none';
+      }
+
+      // Show the success confirmation using the correct id suffix
+      document.getElementById('success-' + id).style.display = 'flex';
+    }
+  </script>
+
 </body>
 </html>
