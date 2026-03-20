@@ -852,8 +852,8 @@
   ============================================================ -->
   <script>
     async function handleSubmit(e, id) {
-      e.preventDefault();
-  
+     e.preventDefault();
+
       const form = e.target;
       const emailInput = form.querySelector('input[type="email"]');
       const email = emailInput.value;
@@ -863,13 +863,13 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email })
-        });
+       });
 
-        const data = await response.json();
+       const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || 'Failed to subscribe');
-        }
+         throw new Error(data.error + (data.details ? ` | ${JSON.stringify(data.details)}` : ''));
+       }
 
         form.style.display = 'none';
 
@@ -880,10 +880,10 @@
 
         document.getElementById('success-' + id).style.display = 'flex';
       } catch (err) {
-        console.error(err);
-        alert('Subscription failed. Please try again.');
+       console.error(err);
+        alert('Subscription failed: ' + err.message);
       }
-    }
+   }
   </script>
 
 </body>
