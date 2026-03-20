@@ -11,12 +11,12 @@ export default async function handler(req, res) {
     }
 
     const response = await fetch(
-      `https://api.beehiiv.com/v2/publications/${process.env.71fc3142-5d61-4f05-9b0a-178719e8f15f}/subscriptions`,
+      `https://api.beehiiv.com/v2/publications/${process.env.BEEHIIV_PUBLICATION_ID}/subscriptions`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.pDCWQxPRAVxY1Ct9wOl11qWCYRL7LvusuRwUrVwjglv4ot8HAE4bwKCuDOnJy0D6}`,
+          Authorization: `Bearer ${process.env.BEEHIIV_API_KEY}`,
         },
         body: JSON.stringify({
           email,
