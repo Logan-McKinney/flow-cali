@@ -4,14 +4,11 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('Incoming body:', req.body);
-
     const { email } = req.body || {};
 
     if (!email || typeof email !== 'string') {
       return res.status(400).json({
         error: 'Valid email is required',
-        received: req.body
       });
     }
 
@@ -32,7 +29,6 @@ export default async function handler(req, res) {
 
     const text = await beehiivResponse.text();
     console.log('Beehiiv status:', beehiivResponse.status);
-    console.log('Beehiiv response text:', text);
 
     let data = {};
     try {
@@ -43,8 +39,7 @@ export default async function handler(req, res) {
 
     if (!beehiivResponse.ok) {
       return res.status(beehiivResponse.status).json({
-        error: data?.error || data?.message || 'Subscription failed',
-        details: data
+        error: 'Unable to complete subscription request'
       });
     }
 
@@ -53,7 +48,6 @@ export default async function handler(req, res) {
     console.error('Server error:', err);
     return res.status(500).json({
       error: 'Server error',
-      details: String(err)
     });
   }
 }
